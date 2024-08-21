@@ -51,15 +51,14 @@ export async function run (): Promise<void> {
     const shouldRequireDeploymentId = type === 'delete'
     deploymentId = getInput(DEPLOYMENT_ID_STATE_NAME, { required: shouldRequireDeploymentId }) ?? '0'
     console.log(`deploymentId: ${deploymentId}`)
-  } catch (error) {
+  } catch (error: any) {
     core.error(error)
     core.setFailed(`Wrong parameters given: ${JSON.stringify(error, null, 2)}`)
     throw error
   }
   console.log('\n')
 
-  const client = new github.GitHub(token, { previews: ['ant-man', 'flash'] })
-
+  const octokitClient = github.getOctokit(token, { previews: ['ant-man', 'flash'] })
   console.log('### run ###')
 
   switch (type) {
@@ -69,7 +68,7 @@ export async function run (): Promise<void> {
         // don't create one again.
         if (deploymentId === '0') {
           deploymentId = await create(
-            client,
+            octokitClient,
             logsUrl,
             description,
             status,
@@ -81,7 +80,7 @@ export async function run (): Promise<void> {
         console.log(`saveState::${DEPLOYMENT_ID_STATE_NAME}: ${deploymentId}`)
         core.saveState(DEPLOYMENT_ID_STATE_NAME, deploymentId) // for internal use
         core.setOutput(DEPLOYMENT_ID_STATE_NAME, deploymentId) // keep that output for external dependencies
-      } catch (error) {
+      } catch (error: any) {
         core.error(error)
         core.setFailed(`Create deployment failed: ${JSON.stringify(error, null, 2)}`)
         throw error
@@ -90,10 +89,10 @@ export async function run (): Promise<void> {
     case 'delete':
       try {
         await deleteDeployment(
-          client,
+          octokitClient,
           Number(deploymentId)
         )
-      } catch (error) {
+      } catch (error: any) {
         core.error(error)
         core.setFailed(`Delete deployment failed: ${JSON.stringify(error, null, 2)}`)
         throw error
@@ -102,10 +101,10 @@ export async function run (): Promise<void> {
     case 'delete-all':
       try {
         await deleteAll(
-          client,
+          octokitClient,
           environment
         )
-      } catch (error) {
+      } catch (error: any) {
         core.error(error)
         core.setFailed(`Delete all deployments failed: ${JSON.stringify(error, null, 2)}`)
         throw error

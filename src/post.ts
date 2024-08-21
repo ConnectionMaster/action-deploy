@@ -54,7 +54,7 @@ export async function post (): Promise<void> {
 
     deploymentConfidenceUrl = getInput('deployment_confidence_url') ?? ''
     console.log(`deployment confidence dashboard URL: ${deploymentConfidenceUrl}`)
-  } catch (error) {
+  } catch (error: any) {
     core.error(error)
     core.setFailed(`Wrong parameters given: ${JSON.stringify(error, null, 2)}`)
     throw error
@@ -62,7 +62,7 @@ export async function post (): Promise<void> {
   console.log('\n')
   console.log('### post ###')
 
-  const client = new github.GitHub(token, { previews: ['ant-man', 'flash'] })
+  const octokitClient = github.getOctokit(token, { previews: ['ant-man', 'flash'] })
   const status: DeploymentStatus = jobStatus === 'success' ? 'success' : 'failure'
   console.log(`status: ${status}`)
 
@@ -80,8 +80,8 @@ export async function post (): Promise<void> {
 
       try {
         // If the deployment was managed by another workflow we don't want to mutate it here
-        if (mutateDeployment) await complete(client, Number(deploymentId), status)
-      } catch (error) {
+        if (mutateDeployment) await complete(octokitClient, Number(deploymentId), status)
+      } catch (error: any) {
         if (error.name === 'HttpError' && error.status === 404) {
           console.log('Couldn\'t complete a deployment: not found')
           return
